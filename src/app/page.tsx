@@ -13,11 +13,20 @@ export const metadata: Metadata = {
     url: "https://evmgastracker.com",
     siteName: "EVM Gas Tracker",
     type: "website",
+    images: [
+      {
+        url: "/og-preview.png",
+        width: 1200,
+        height: 630,
+        alt: "EVM Gas Tracker Preview",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Live Gas Costs on EVM Networks",
     description: "See what it costs to make transactions on Ethereum, Polygon, Arbitrum, and more — in real time.",
+    images: ["/og-preview.png"],
   },
   icons: {
     icon: "/favicon.ico",
