@@ -1,7 +1,7 @@
-import ClientComponent from "./client-component";
+import fs from "fs/promises";
+import path from "path";
 import { Metadata } from "next";
-
-export const dynamic = "force-dynamic";
+import ClientComponent from "./client-component";
 
 export const metadata: Metadata = {
   title: "Live Gas Costs on EVM Networks | EVM Gas Tracker",
@@ -34,12 +34,9 @@ export const metadata: Metadata = {
 };
 
 async function getInitialData() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-  const res = await fetch(`${baseUrl}/initial-data.json`, {
-    cache: "no-store",
-  });
-  const data = await res.json();
-  return data;
+  const filePath = path.join(process.cwd(), "public", "initial-data.json");
+  const json = await fs.readFile(filePath, "utf-8");
+  return JSON.parse(json);
 }
 
 export default async function Page() {
@@ -47,7 +44,7 @@ export default async function Page() {
   return (
     <main className="min-h-screen bg-background text-foreground px-4 pb-12">
       <section className="max-w-7xl mx-auto pt-8">
-        <ClientComponent data={data} />
+        <ClientComponent initialData={data} />
       </section>
     </main>
   );

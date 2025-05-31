@@ -25,11 +25,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/*
         <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1000000000000000"
           crossOrigin="anonymous"
         />
+        */}
         <meta name="apple-mobile-web-app-title" content="EVM Gas Tracker" />
 
 

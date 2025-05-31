@@ -5,7 +5,12 @@ export const COMMON_TASKS = [
     { label: "Mint NFT", gas: 200000 },
 ];
 
-export const SUPPORTED_CURRENCIES = {
+export type CurrencyInfo = {
+    name: string;
+    symbol: string;
+};
+
+export const SUPPORTED_CURRENCIES: Record<string, CurrencyInfo> = {
     USD: { name: "US Dollar", symbol: "$" },
     EUR: { name: "Euro", symbol: "€" },
     GBP: { name: "British Pound", symbol: "£" },
