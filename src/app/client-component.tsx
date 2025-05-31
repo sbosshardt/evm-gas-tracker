@@ -39,7 +39,10 @@ export default function ClientComponent({ initialData }: ClientComponentProps) {
   };
 
   useEffect(() => {
-    const socketInstance = io("/", {
+    const WS_PORT = process.env.WS_PORT ?? 3001;
+    const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? `ws://localhost:${WS_PORT}`;
+
+    const socketInstance = io(WS_URL, {
       transports: ["websocket"],
       reconnection: true,
       reconnectionAttempts: 5,
@@ -49,6 +52,10 @@ export default function ClientComponent({ initialData }: ClientComponentProps) {
     socketInstance.on("connect", () => {
       console.log("Connected to WebSocket server");
       setIsConnected(true);
+    });
+
+    socketInstance.on("connect_error", (error) => {
+      console.error("WebSocket connection error:", error);
     });
 
     socketInstance.on("disconnect", () => {
@@ -92,12 +99,22 @@ export default function ClientComponent({ initialData }: ClientComponentProps) {
   }, [language]);
 
   const formatNumber = (value: number, currency: string = selectedCurrency): string => {
-    //const currencyInfo: CurrencyInfo = SUPPORTED_CURRENCIES[currency];
+    if (value === undefined || value === null) return "-";
+
+    // For cryptocurrencies (BTC, ETH, BNB), use custom formatting
+    if (["BTC", "ETH", "BNB"].includes(currency)) {
+      // For numbers >= 1, use regular toFixed(4)
+      if (Math.abs(value) >= 1) {
+        return `${value.toFixed(4)}`;
+      }
+      // For numbers < 1, use toPrecision to get significant figures
+      return `${value.toPrecision(5)}`;
+    }
+
+    // For fiat currencies, use Intl.NumberFormat without the currency symbol
     const formatter = new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: Math.abs(value) >= 1 ? 2 : 5,
+      maximumFractionDigits: Math.abs(value) >= 1 ? 2 : 5,
     });
     return formatter.format(value);
   };
@@ -121,18 +138,13 @@ export default function ClientComponent({ initialData }: ClientComponentProps) {
             <CardContent className="p-4 space-y-2">
               <div className="text-xl font-semibold">{network}</div>
               <div className="text-sm text-muted-foreground">
-                Native Token: {info.native_token_symbol} @{" "}
-                {SUPPORTED_CURRENCIES[selectedCurrency]?.symbol}
-                {formatNumber(info.token_prices?.[selectedCurrency])}
+                Native Token: {info.native_token_symbol} @ {SUPPORTED_CURRENCIES[selectedCurrency]?.symbol}{formatNumber(info.token_prices?.[selectedCurrency])}
               </div>
               <div className="text-sm">
                 Median Gas Price: {formatGasPrice(info.gas_prices_gwei?.["50"])}
               </div>
               <div className="text-sm font-medium">
-                1M Gas ≈ {formatNumber(info.native_token_costs?.["50"])} {" "}
-                {info.native_token_symbol} ≈{" "}
-                {SUPPORTED_CURRENCIES[selectedCurrency]?.symbol}
-                {formatNumber(info.costs?.[selectedCurrency]?.["50"])} {selectedCurrency}
+                1M Gas ≈ {formatNumber(info.native_token_costs?.["50"])} {info.native_token_symbol} ≈ {SUPPORTED_CURRENCIES[selectedCurrency]?.symbol}{formatNumber(info.costs?.[selectedCurrency]?.["50"])} {selectedCurrency}
               </div>
               <hr />
               <div className="text-sm font-medium">Estimated Cost by Task:</div>
@@ -142,8 +154,7 @@ export default function ClientComponent({ initialData }: ClientComponentProps) {
                   const taskCost = info.costs?.[selectedCurrency]?.["50"] * multiplier;
                   return (
                     <li key={label}>
-                      {label}: {SUPPORTED_CURRENCIES[selectedCurrency]?.symbol}
-                      {formatNumber(taskCost)} {selectedCurrency}
+                      {label}: {SUPPORTED_CURRENCIES[selectedCurrency]?.symbol}{formatNumber(taskCost)}
                     </li>
                   );
                 })}
