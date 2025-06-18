@@ -12,6 +12,7 @@ import { NetworkData } from "@/lib/types";
 export default function ClientComponent() {
   const [data, setData] = useState<NetworkData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [socket, setSocket] = useState<Socket | null>(null);
   const [selectedCurrency, setSelectedCurrency] = useState<string>("USD");
   const [isConnected, setIsConnected] = useState<boolean>(false);
