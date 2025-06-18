@@ -1,5 +1,3 @@
-import fs from "fs/promises";
-import path from "path";
 import { Metadata } from "next";
 import ClientComponent from "./client-component";
 
@@ -33,18 +31,11 @@ export const metadata: Metadata = {
   },
 };
 
-async function getInitialData() {
-  const filePath = path.join(process.cwd(), "public", "initial-data.json");
-  const json = await fs.readFile(filePath, "utf-8");
-  return JSON.parse(json);
-}
-
-export default async function Page() {
-  const data = await getInitialData();
+export default function Page() {
   return (
     <main className="min-h-screen bg-background text-foreground px-4 pb-12">
       <section className="max-w-7xl mx-auto pt-8">
-        <ClientComponent initialData={data} />
+        <ClientComponent />
       </section>
     </main>
   );

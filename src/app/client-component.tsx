@@ -9,13 +9,9 @@ import StickyHeader from "./sticky-header";
 import { io, Socket } from "socket.io-client";
 import { NetworkData } from "@/lib/types";
 
-interface ClientComponentProps {
-  initialData: NetworkData;
-}
-
-export default function ClientComponent({ initialData }: ClientComponentProps) {
-  const [data, setData] = useState<NetworkData>(initialData);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function ClientComponent() {
+  const [data, setData] = useState<NetworkData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [selectedCurrency, setSelectedCurrency] = useState<string>("USD");
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -38,11 +34,30 @@ export default function ClientComponent({ initialData }: ClientComponentProps) {
     return navigator.language?.split("-")[0] || "en";
   };
 
+  // Fetch initial data
   useEffect(() => {
-    const WS_PORT = process.env.WS_PORT ?? 3001;
-    const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? `ws://localhost:${WS_PORT}`;
+    const fetchInitialData = async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? window.location.origin;
+        const response = await fetch(`${baseUrl}/initial-data.json`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch initial data');
+        }
+        const initialData = await response.json();
+        setData(initialData);
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    const socketInstance = io(WS_URL, {
+    fetchInitialData();
+  }, []);
+
+  // Setup WebSocket connection
+  useEffect(() => {
+    const socketInstance = io("/", {
       transports: ["websocket"],
       reconnection: true,
       reconnectionAttempts: 5,
@@ -52,10 +67,6 @@ export default function ClientComponent({ initialData }: ClientComponentProps) {
     socketInstance.on("connect", () => {
       console.log("Connected to WebSocket server");
       setIsConnected(true);
-    });
-
-    socketInstance.on("connect_error", (error) => {
-      console.error("WebSocket connection error:", error);
     });
 
     socketInstance.on("disconnect", () => {
@@ -98,7 +109,7 @@ export default function ClientComponent({ initialData }: ClientComponentProps) {
     localStorage.setItem("language", language);
   }, [language]);
 
-  const formatNumber = (value: number, currency: string = selectedCurrency): string => {
+  const formatNumber = (value: number | undefined, currency: string = selectedCurrency): string => {
     if (value === undefined || value === null) return "-";
 
     // For cryptocurrencies (BTC, ETH, BNB), use custom formatting
@@ -119,9 +130,26 @@ export default function ClientComponent({ initialData }: ClientComponentProps) {
     return formatter.format(value);
   };
 
-  const formatGasPrice = (value: number): string => {
+  const formatGasPrice = (value: number | undefined): string => {
+    if (value === undefined || value === null) return "-";
     return `${value.toLocaleString()} Gwei`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-lg">Loading gas prices...</div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-lg text-red-500">Failed to load gas prices. Please try refreshing the page.</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4">
@@ -138,13 +166,15 @@ export default function ClientComponent({ initialData }: ClientComponentProps) {
             <CardContent className="p-4 space-y-2">
               <div className="text-xl font-semibold">{network}</div>
               <div className="text-sm text-muted-foreground">
-                Native Token: {info.native_token_symbol} @ {SUPPORTED_CURRENCIES[selectedCurrency]?.symbol}{formatNumber(info.token_prices?.[selectedCurrency])}
+                Native Token: {info.native_token_symbol} @ {SUPPORTED_CURRENCIES[selectedCurrency]?.symbol}
+                {formatNumber(info.token_prices?.[selectedCurrency])}
               </div>
               <div className="text-sm">
                 Median Gas Price: {formatGasPrice(info.gas_prices_gwei?.["50"])}
               </div>
               <div className="text-sm font-medium">
-                1M Gas ≈ {formatNumber(info.native_token_costs?.["50"])} {info.native_token_symbol} ≈ {SUPPORTED_CURRENCIES[selectedCurrency]?.symbol}{formatNumber(info.costs?.[selectedCurrency]?.["50"])} {selectedCurrency}
+                1M Gas ≈ {formatNumber(info.native_token_costs?.["50"])} {info.native_token_symbol} ≈ {SUPPORTED_CURRENCIES[selectedCurrency]?.symbol}
+                {formatNumber(info.costs?.[selectedCurrency]?.["50"])} {selectedCurrency}
               </div>
               <hr />
               <div className="text-sm font-medium">Estimated Cost by Task:</div>
