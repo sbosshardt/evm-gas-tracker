@@ -1,6 +1,6 @@
 # EVM Gas Tracker
 
-A real-time gas price tracker for Ethereum Virtual Machine (EVM) compatible networks. Monitor gas costs across different networks and estimate transaction costs for common operations.
+A gas price tracker for Ethereum Virtual Machine (EVM) compatible networks. Monitor gas costs across different networks and estimate transaction costs for common operations.
 
 ## Features
 
