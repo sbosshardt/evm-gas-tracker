@@ -8,8 +8,13 @@ const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  pingTimeout: 30000,
+  pingInterval: 10000,
+  transports: ['websocket'],
+  allowEIO3: true,
 });
 
 // Watch for changes in initial-data.json
@@ -20,8 +25,21 @@ console.log('Watching file:', dataPath);
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+  // Send current data immediately upon connection
+  readJsonFile()
+    .then(data => {
+      socket.emit('data-update', data);
+    })
+    .catch(error => {
+      console.error('Error sending initial data to new client:', error);
+    });
+
+  socket.on('disconnect', (reason) => {
+    console.log('Client disconnected:', socket.id, 'Reason:', reason);
+  });
+
+  socket.on('error', (error) => {
+    console.error('Socket error for client', socket.id, ':', error);
   });
 });
 

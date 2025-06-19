@@ -61,8 +61,11 @@ export default function ClientComponent() {
     const socketInstance = io("/", {
       transports: ["websocket"],
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+      autoConnect: true,
     });
 
     socketInstance.on("connect", () => {
@@ -72,6 +75,20 @@ export default function ClientComponent() {
 
     socketInstance.on("disconnect", () => {
       console.log("Disconnected from WebSocket server");
+      setIsConnected(false);
+    });
+
+    socketInstance.on("connect_error", (error) => {
+      console.log("Connection error:", error);
+      setIsConnected(false);
+    });
+
+    socketInstance.on("reconnect_attempt", (attemptNumber) => {
+      console.log(`Attempting reconnection #${attemptNumber}`);
+    });
+
+    socketInstance.on("reconnect_failed", () => {
+      console.log("Failed to reconnect to WebSocket server");
       setIsConnected(false);
     });
 
