@@ -20,6 +20,18 @@ const nextConfig: NextConfig = {
             ].join('; ')
           },
           {
+            key: 'Content-Security-Policy-Report-Only',
+            value: [
+              "default-src 'self'",
+              "script-src 'self'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "connect-src 'self' wss: ws:",
+              "font-src 'self'",
+              "report-uri /api/csp-report"
+            ].join('; ')
+          },
+          {
             key: 'X-Content-Type-Options',
             value: 'nosniff'
           },
